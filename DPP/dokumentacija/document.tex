@@ -1,0 +1,595 @@
+% !TeX spellcheck = en_US
+\documentclass[12pt]{rectors}
+
+\include{preamble/preamble}
+\usepackage{amsthm}
+\newtheorem{theorem}{Teorem}[section]
+\newtheorem{corollary}{Korolar}[theorem]
+\newtheorem{lemma}[theorem]{Lema}
+\newtheorem{definition}{Definicija}[section]
+\newtheorem{remark}{Napomena}[section]
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\usepackage{listings}
+
+\usepackage{amsfonts}
+\usepackage{subfig}
+\usepackage{verbatim}
+
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\usepackage{listings}
+\lstset{frame=tb,
+	language=Java,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=3
+}
+\renewcommand{\lstlistingname}{Isječak koda}% Listing -> Algorithm
+\renewcommand{\lstlistlistingname}{Lista \lstlistingname ova}
+\begin{document}
+	\begin{otherlanguage}{croatian}
+		\include{preamble/frontpage}
+\newtheorem{thm}{Teorem}[section]
+\newtheorem{defn}[thm]{Definicija}		
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Table of contents
+
+\pagenumbering{gobble} %remove page numberig and restore it later \pagenumbering{arabic}
+\tableofcontents{}
+\vfill{}
+\newpage
+\pagenumbering{arabic}
+\section[Uvod]{Uvod}
+Na predavanjima, u sklopu cjeline 4, objašnjen je pojam međusobnog isključivanja \cite{manger}.
+Obrađena su 4 algoritma za međusobno isključivanje i navedena njihova svojstva.
+U sklopu ovoga projekta opisujemo, implementiramo i testiramo još tri dodatna algoritma 
+koji rješavaju isti problem.
+To su:
+\begin{enumerate}
+	\item Singhal-ov algoritam zasnovan na 
+	dinamičkoj strukturi podataka,
+	\item algoritam Lodha \& Kshemkalyany koji predstavlja optimizaciju 
+	algoritma R \& A s predavanja,
+	\item algoritam Maekawa zasnovan na kvorumu.
+\end{enumerate}
+\section{Algoritmi međusobnog isključivanja zasnovani na dinamičkoj strukturi podataka}
+Većina algoritama za međusobno isključivanje rade jednako bez obzira na trenutačno stanje sustava u kojemu su pokrenuti. Time su onemogućeni iskoristiti sva svojstva sustava pojedinog trenutka. Postoji mogućnost smanjene efikasnosti.
+
+Ukoliko u sustavu postoje 2 grupe procesa, oni koji često (grupa 1) i oni koji rijetko (grupa 2) ulaze u kritičnu sekciju (CS), povećanje efikasnosti algoritma u odnosu na sustav može se dobiti sljedećim uvjetom:\\
+\textit{Procesi koji često ulaze u CS, odobrenje za ulazak u CS traže samo od procesa iste grupe. Ostali procesi traže odobrenje za ulazak u CS od svih procesa.}\label{sec:uvijet} 
+
+Jedan algoritam takav algoritam je Singhal-ov algoritam.
+\subsection{Singhalov algoritam}
+Singhalov algoritam, nakon pokretanja, uči o stanju sustava. Izvor znanja predstavljaju poruke koje se izmjenjuju unutar sustava. Temeljem znanja o trenutnom stanju, gradi se dinamička struktura podataka.
+
+Izgradnja algoritma zasnovanog na dinamičkoj strukturi podataka koja prati trenutno stanje sustava ima svoje izazove:
+\begin{enumerate}
+	\item Kako efikasno prepoznati koji procesi trenutno zahtjevaju ulaz u CS?
+	\item Kako projektirati postavljenje zahtjeva za CS za procese iz grupe 2 (manje aktivne procese)?
+	\item Kako omogućiti prijelaz iz grupe 2 u grupu 1 i obratno?
+	\item Ukoliko proces ne zahtjeva odobrenje za ulazak u CS od svih procesa, kako osigurati svojstvo \textit{sigurnosti}? 
+	\item Kako osigurati da prikupljanje informacija o trenutnom stanju sustava ne utječe na efikasnost poništavajući dobiveno poboljšanje?
+\end{enumerate}
+
+U danjem razmatranju pretpostavljamo kako se distribuirani sustav sastoji od $N$ procesa
+$P_1, P_2, \hdots, P_N$. Ne postoji gornja ograda na slanje i primanje poruka, ali je ona konačna za svaku poruku. Pretpostavljamo FIFO uređaj na komunikacijske kanale i smatrako kako se poruke ne mogu izgubiti. Također, pretpostavljamo kako procesi rade bez grešaka.
+
+Kako bi se omogućilo korištenje Singhalovog algoritma za međusobno isključivanje, svaki proces $P_i$ čuva treba čuvati dva skupa znanja, $R_i$ i $I_i$. $R_i$ je skup svih 
+procesa od kojih $P_i$ treba tražiti dopuštenje za ulazak u CS. 
+Skup $I_i$ sadrži sve procese koji traže dopuštenje za ulazak u CS od procesa $P_i$ i imaju
+zahtjev za CS manjeg prioriteta nego $P_i$. Zato proces $P_i$ šalje dopuštenje za ulazak u CS tek nakon izlazka iz CS.
+
+Prioritet zahtjeva za kritičnom sekcijom, ostvaruje se pridjeljivanjem vremenskog žiga.
+Dakle, uz skupove $R_i$ i $I_i$, zahtjeva se da proces $P_i$ 
+održava logički sat $C_i$. Koristi se jednostavan Lamportov sat proširen do totalnog uređaja na zahtjeve pomoću vrijednosti identifikatora procesa (kao na predavanjima).
+
+Trenutno stanje, u onosu na zahtjevanje CS-a, proces čuva u 3 lokalne varijable: 
+\begin{enumerate}
+	\item $zahtjev \in {True,False}$
+	\item $u\_CS \in {True,False}$
+	\item $mojPrioritet \in {True,False}$
+\end{enumerate} 
+
+Varijabla \textit{zahtjev} ima vrijednost $True$ ako i samo ako proces ima postavljen zahtjev za CS. Varijabla \textit{$u\_CS$} ima vrijednost $True$ ako i samo ako se proces inalazi u CS.
+Varijabla \textit{$mojPrioritet$} ima vrijednost $True$ ako i samo ako se proces ima postavljen zahtjev za CS i on je većeg prioriteta od dolazećeg zahtjeva za CS.
+
+Na početku,  skup $R_i$ sadrži procese $P_1, P_2, \hdots, P_{i-1}$,
+$I_i = P_i$, $C_i = 0$ i $zahtjev = u\_CS = mojPrioritet = False$
+
+Dakle, za niz procesa $P_1, P_2 \hdots, P_N$,
+interno, proces $P_i$ dijeli niz svih procesaa na 2 podniza: (1) niz procesa od kojih traži dopuštenje, njemu slijeva, i (2) niz procesa koji njega traže dopuštenje za ulazak u CS, njemu zdasna. 
+$$P_1, P_2, \hdots,P_{i-1} || P_i || P_{i+1}, \hdots, P_N$$
+Na ovaj način imamo sljedeće svojstvo: ($T$) veličina skupa $R_i$ se povećava povećanjem indeksa procesa $i$.
+\\
+Ova konfiguracija
+sustava zato se često naziva \textit{staircase pattern}.
+Tijekom rada algoritma, održava se \textit{staircase pattern}, ali se redosljed procesa dinamički mijenja.
+Algoritam teži prema tome da procesi koji češće zahtjevaju CS, imaju manji kardinalitet skupa $R$, tj. budu 
+što ljevije u nizu.
+%\newpage
+\subsubsection{Opis algoritma}
+Poruke kojima se traži odobrenje ulaska u CS su tipa \textit{request}.
+Poruke kojima proces daje odobrenje ulaska u CS su tipa \textit{okay}.
+Oba tipa poruka sadržavaju vrijednost logičkog sata pošiljatelja u trenutku slanja poruke.\\
+
+Slijedi opis rada algoritma upotpunjen pseudokodom na kraju podpoglavlja.\\
+Kada proces $P_i$ želi ući u CS, radi sljedeće:%
+\begin{enumerate}
+	\item postavlja varijablu $zahtjev$ na $True$,
+	\item povećava vrijednost logičkog sata za 1,
+	\item šalje poruke tipa \textit{request} svim procesima iz skupa $R_i$,
+	\item čeka da dobije odgovore na postavljeni zahtjev, poruke tipa \textit{okay}, od svih procesa iz $R_i$,
+	\item nakon što proces dobije poruku tipa \textit{okay} od svih procesa iz $R_i$, ulazi u CS.
+\end{enumerate}
+
+Slijedi opis akcija procesa $P_i$, u odnosu na trenutno stanje procesa, u slučaju primitka poruke tipa \textit{request}:%
+\begin{itemize}
+	\item 
+Kada proces $P_i$ ima \textit{zahtjev} $= True$ i dobije poruku tipa \textit{request} većeg prioriteta od $P_j$, radi sljedeće:
+\begin{enumerate}
+	\item poveća vrijednost logičkog sata,
+	\item šalje poruku tipa \textit{okay},
+	\item ukoliko $P_j$ nije u $R_i$, dodaje ga u $R_i$ i šalje poruku tipa \textit{request}.
+\end{enumerate}
+Primjetimo kako iz $P_j \not \in R_i$ implicira da $P_i$ nije poslao zahtjev za CS procesu
+$P_j$ koji mu ovim putem šalje kako bi nakon završetka CS procesa $P_j$, $P_j$ dojavio
+da je izašao iz CS, tj. da postoji mogućnost da i on uđe u CS.
+
+\item
+Kada proces $P_i$ ima \textit{zahtjev} $= True$ i dobije poruku tipa \textit{request} nižeg prioriteta od $P_j$ ili kada proces $P_i$ ima \textit{$u\_CS$} $= True$ i dobije poruku tipa \textit{request} od $P_j$, radi sljedeće:
+\begin{enumerate}
+	\item poveća vrijednost logičkog sata,
+	\item doda $P_j$ u $R_i$.
+\end{enumerate}
+
+\item
+Kada proces $P_i$ u stanju \textit{$u\_CS$} $= False$ i \textit{zahtjev} $= False$ dobije poruku tipa \textit{request} od $P_j$, radi sljedeće:
+\begin{enumerate}
+	\item povećaj vrijednost logičkog sata,
+	\item doda $P_j$ u $I_i$,
+	\item šalje poruku tipa \textit{okay} procesu $P_j$.
+\end{enumerate}
+
+\end{itemize}
+
+Kada pak proces $P_i$ primi poruku tipa \textit{okay} od procesa $P_j$ radi:%
+\begin{enumerate}
+	\item povećava vrijednost logičkog sata po pravilima protjecanja vremena u Lamportovom satu,
+	\item izbacuje $P_j$ iz $R_i$,
+	\item ukoliko je $R_i$ prazan, dopušta ulazak u kritičnu sekciju:
+	\begin{itemize}
+		\item postavlja $zahtjev$ na $False$,
+		\item postavlja $u\_CS$ na $True$,
+		\item ulazi u kritičnu sekciju.
+	\end{itemize} 
+\end{enumerate}
+Nakon izlaska iz CS, proces $P_i$ radi sljedeće:%
+\begin{enumerate}
+	\item postavlja varijablu $u\_CS$ na $False$,
+	\item šalje poruke tipa \textit{okay} svim procesima iz $I_i \setminus \{P_i\}$, 
+	\item osvježava vrijednosti skupova $R_i$ i $I_i$:  $R_i = I_i \setminus \{P_i\}$, $I_i = \emptyset$.
+\end{enumerate} 
+\newpage
+Pseudokod algoritma je sljedeći:\\
+\begin{algorithm}[H]
+	
+	\underline{Korak 1: Zahtjev za CS}\;
+	$zahtjev = True$\;
+	$C_i = C_i +1$\;
+	\ForEach{$P_j \in R_i$}{%
+		pošalji poruku tipa \textit{request} $P_j$-u \;
+	}
+	\While{$True$}{%
+		\If{$R_i == \emptyset$}{%
+			break\;
+			}
+		}
+	$zahtjev = False$\;	
+	
+	\underline{Korak 2: CS}\;
+	$u\_CS = True$\;
+	kritična sekcija\;
+	$u\_CS = False$\;
+	
+	\underline{Korak 3: Izlazak iz CS}\;
+	\ForEach{$P_j \in I_i\setminus \{ P_i \}$}{%
+		$I_i = I_i \setminus P_j$\;
+		pošalji poruku tipa \textit{okay} $P_j$-u \;
+		$R_i = R_i \cup P_j$\;
+	}
+	
+	\caption{Singhalov algoritam međusobnog isključivanja}
+\end{algorithm} 
+\vspace{0.2cm}
+
+Izvedba \textit{Shingalovog algoritma} je napravljena u programskom jeziku \textit{JAVA} klasom \textit{SinghalMutex}.
+Potrebno je pripaziti na konzistentnost varijabli $R_i$, $I_i$, $C_i$.
+Funkcije koje ih mijenjaju označavamo sa \textit{syncronized}.
+\vspace{0.5cm}
+\\Prevođenje: \textbf{javac} SinghalMutex.java\\
+Pokretanje: %
+\begin{enumerate}
+	\item U terminalu pokrećemo program \textit{NameServer} bez argumenata:\\
+	 \textbf{java} NameServer
+	 \item Odlučujemo se za broj procesa distribuiranog sustava u kojem ćemo pokrenuti 
+	 algoritam, u oznaci $N$ ,
+	 \item Odlučujemo se za $baznoIme$ procesa distribuiranog sustava,
+	 \item Otvaramo $N$ terminala, u svakome pokrećemo jedan proces pokretanjem programa
+	 $LockTester$ s odgovarajućim argumentima:\\
+	 \textbf{java} LockTester $<baznoIme>$ $<i>$ $<N>$ $<Singhal>$
+	 \vspace{0.2cm}
+	 \\gdje je $i$ identifikator procesa, $i \in \{ 0,1,2,\hdots,N-1 \}$. 
+	 Svakom procesu se pridružuje jedinstveni identifikator.
+\end{enumerate}
+\textit{LockTester.java} predstavlja testni program algoritma koji se poslan zajedno s dokumentacijom. Naravno, prije pokretanja samog procesa (programa), potrebno ga je prevesti s \textbf{javac} ime\_preograma.java.
+\vspace{0.5cm}
+\\Ukoliko sve procese pokrenemo pokrećući isti tesni program, svi procesi jednako često zahtjevaju kritičnu sekciju. Program $LockTester.java$ je izveden tako da svi procesi često zatražuju CS. 
+\\Kako bi pokazali po čemu je objašnjeni algoritam poseban (procesi koji često zahtjevaju CS traže dopuštenje samo od preocesa koji često zahtjevaju CS), napravljen je još jedan testni program koji je izveden tako da su njegovi zahtjevi za CS otprilike 10 puta rjeđi. Ukoliko pokrenemo nekoliko procesa s novim testnim programom ($rijetki$ proces), a ostale s $LockTester.java$, uočavamo kako se skup $R$ pojedinog procesa dinamički mijenja.
+U trenutcima kada $rijetki$ proces zatražuje CS, on postaje dio skupa $R$ nekih drugih procesa. Dok ne zatražuje CS, nije element niti jednog skupa $R$.
+
+ 
+
+\subsubsection{Ispravnost algoritma}
+Najprije primjetimo kako mehanizam rada algoritma održava svojstvo:\\
+\textit{U svakom trenutku algoritma za dva različita procesa istog sustava koji istovremeno zatražuju CS, $P_i$ i $P_j$, vrijedi: $P_i \in R_j$ ili $P_j \in R_i$.}
+\vspace{0.5cm}
+\\Dokazujemo jače svojstvo. 
+\begin{description}
+	\item
+	Na početku postavljanja zahtjeva za CS procesa $P_i \in \{P_0,P_1, \hdots, P_N\}$,
+	za sve druge procese sustava, $P_j$, vrijedi da $P_i$ $\in R_j$ ili $P_j$ $\in R_i$.
+\end{description}
+\begin{proof}
+	Na početku rada algoritma, svojstvo je trivijalno zadovoljeno. Naime, proces s većim identifikatorom sadrži proces s manjim identifikatorom u svojemu skupu $R$.\\
+	Pretpostvimo sada kako u nekom trenutku rada algoritma $P_i$ želi ući u CS.
+	Neka je $P_j$ neki drugi proces i neka vrijedi $P_j \in R_i$.\\
+	Dokazujemo kako je gornje svojstvo zadovoljeno i prilikom sljedećeg postavljanja zahtjeva procesa $P_i$ za CS.
+	\vspace{0.2cm} 
+	\\Tokom postavljanja zahtjeva za CS, $P_i$ uklanja $P_j$ iz $R_i$ nakon slanja poruke $r_1$ tipa \textit{request} procesu $P_j$, po primitku poruke \textit{okay} procesa $P_j$.
+	\\$P_j$, po primitku poruke $r_1$, ili stvalja $P_i$ u $R_j$ ili stavlja $P_i$ u $I_j$.
+	Ukoliko $P_j$ stvalja $P_i$ u $R_j$ prilikom sljedećeg zahtjevanja za CS od $P_i$ imamo dva moguća scenarija:%
+	\begin{itemize}
+		\item $P_j$ je u međuvremenu (prije $P_i$) zahtjevao CS:\\
+		Tada je $P_j$ tražio dopuštenje za ulazak u CS i od $P_i$ pa se $P_j$ nalazi u 
+		$R_i$.
+		\item $P_j$ u međuvremenu nije zahtjevao CS:\\
+		Dakle, $P_j \not \in R_i$, ali $P_i \in R_j$.
+	\end{itemize}
+	Ukoliko $P_j$ stvalja $P_i$ u $I_j$, on ne šalje \textit{okay} na postavljeni zahtjev 
+	sve do trenutka kada će prebaciti $P_i$ u $R_j$.
+	Dakle, prilikom sljedećeg postavljanja zahtjeva za CS od $P_i$, $P_i$ se sigurno nalazio u $R_j$ što dovosi do spomenutih scenarija. Scenarij ovisi o događajima koji su nastupili nakon trenutka prebacivanja $P_i$ u $R_j$. 
+	\vspace{0.5cm}
+	\\Dakle, iskazano svojstvo vrijedi na početku svakoga zahtjeva za CS od $P_i$. Budući da je $P_i$ proizvan, tvrdnja vrijedi $\forall P_i \in \{P_0,P_1,\hdots,P_{N-1}\}$.
+\end{proof}
+\vspace{0.5cm}
+Pokažimo sada kako algoritam zadovoljava svojstvo \textbf{\textit{sigurnosti}}.\\
+Potrebno je pokazati kako se dva različita procesa sustava istovremeno ne mogu nalaziti u svojim CS.\\
+\begin{proof}
+Pretpostavimo suprotno. Neka se dogodilo kako se procesi $P_i$ i $P_j$ nalaze istovremeno u svojim CS.\\  
+Prema gornjem svojstvu, u trenutku postavljanja zahtjeva $P_i \in R_j$ ili $P_j \in R_i$. \\
+BSOMP $P_i \in R_j$.\\
+Tada $P_i$ traži dopuštenje od $P_j$ za ulazak u CS. Kako vrijedi $i \not = j$, imamo dva slučaja.\\
+Neka je prvo $i < j$.
+Po primitku zahtjeva za CS od $P_i$, $P_j$ smatra da $P_i$-tov zahtjev ima veći prioritet 
+i šalje $P_i$ zahtjev za ulazak u CS. Očito taj zahtjev je ima veći vremenski žig od $P_i$-tovog. Dakle, tek nakon izlaska iz CS, $P_i$ šalje odobrenje za ulazak u CS procesu $P_j$ pa se oni ne nalaze istovremeno u CS.\\
+Ukoliko $j < i$, tada, $P_i$-tov zahtjev nema prednost nad $P_j$-ovim i $P_j$ mu šalje odobrenje za ulazak u CS tek nakon što on sam iz nje izađe. Dakle, opet $P_i$ i $P_j$ nisu istovremeno u CS.
+\end{proof}%
+%
+\textbf{Odsustvo gladovanja} je ispunjeno zato što zahtjev za CS najvišeg prioriteta ne može biti
+zaustavljen.\\
+
+\textbf{Pravednost} je posljedica činjenice da procesi ulaze u kritični odsječak u redoslijedu
+svojih vremenskih žigova.
+\vspace{0.5cm}
+\\ \underline{Primjer:}\\
+Neka je $N=3$. Promatrani distribuirani sustav se sastoji od 3 procesa $P_1,P_2 i P_3$. Neka $P_2$ i $P_3$ zahtjevaju ulaz u CS. Smatramo da su to prvi zahtjevi na CS. $P_3$ i $P_2$ šalju poruke tipa $request$ procesima iz skupa $R_3 = \{P_1,P_2\}$,
+odnosno $R_2 = \{P_1\}$. Događa se jedna od sljedećih tri situacija:
+\begin{enumerate}
+	\item Vremenski žig pridružen zahtjevu od $R_3$ je manji od vremenskog žiga zahtjeva procesa $P_2$. Tada, $P_2$, po primitku \textit{request} poruke od $P_3$, šalje poruku tipa $okay$, stavlja $P_3$ u $R_2$ i šalje poruku tipa $request$ procesu $P_3$.
+	Dakle, ne ulazi u CS prije nego pto dobije $okay$ poruku od $P_3$ što dobiva tek nakon što $P_3$ izlazi iz CS.
+	$P_3$, po primitku poruke tipa $okay$ procesa $P_2$, miče $P_2$ iz $R_3$.\\
+	$P_1$, budući da ne zatražuje CS, po primitku poruka $request$ od $P_2$ i $P_3$ šalje poruke tipa $okay$ i stavlja $P_2$ i $P_3$ u svoj skup $R_1$. Naime, postoji mogućnost da se $P_2$ ili $P_3$ nalaze u CS u nekom budućem trenutku kada će $P_1$ tražiti pristup CS.\\
+	$P_3$, dobivši $okay$ i od $P_1$, miče $P_1$ iz $R_3$. Sada je $R_3$ prazan i $P_3$ ulazi u CS. Nakon izlaska iz CS, šalje $P_2$ $okay$ i $P_2$ ulazi u CS.
+	
+	\item Vremenski žig zahtjeva procesa $P_3$ je veći od vremenskog žiga zahtjeva $P_2$.
+	Tada $P_2$, nakon primitka $request$ poruke od $P_3$, stavlja $P_3$ u $I_2$ (engl. Inform set). $P_2$ obavještava $P_3$ porukom $okay$ o izlasku iz CS. Nakon toga $P_2$ stavlja $P_3$ u $R_2$. Naime, moguće je da se $P_3$ nalazi u CS sljedeći put kada $P_2$ zatraži ulazak u CS.
+	\item $P_1$ je primio $request$ od $P_2$ i poslao $okay$ prije nego što je poruka  $request$ od $P_3$ došla do $P_2$. Dakle, $P_2$ ulazi prvi u CS i dodaje $P_3$ u $I_2$.
+	$P_2$ šalje $okay$ procesu $P_3$ nakon izlaska iz CS.
+\end{enumerate}
+\subsubsection{Prosječna složenost algoritma u sustavima s rijetkim i čestim zahtjevima na CS}
+U nastavku analiziramo složenost algoritma za međusobno isključivanje.
+Raspravljamo o dodatnoj cijeni koju plaćamo 
+kada u mreži rješavamo problem međudobnog isključivanja upotrebom $Singhalovog$ algoritma.\\
+Razmatramo dvije vrste sustava:%
+\begin{itemize}
+	\item sustav u kojemu se zahtjevi za CS događaju rijetko,
+	\item sustav u kojemu se zahtjevi za CS događaju često.
+\end{itemize}
+
+Promotrimo prvo sustav u kojemu se zahtjevi za CS događaju rijetko.
+U takvom sustavu, broj prisutnih zahtjeva u mreži je mali. Najčešće se radi o jednom ili nijednom zahtjevu. Gotovo nikada 2 ili više procesa istovremeno ne zahtjevaju ulazak u CS.
+Kako je
+broj zahtjeva koje proces $P_i$ treba poslati iz skupa $\{0,1,2,\hdots, N-1\}$, za svaki proces jedinstven, prosječni broj poruka tipa \textit{request} po jednom korištenju CS iznosi $$
+	\frac{0+1+2+\hdots+N-1}{2} = \frac{N(N-1)}{2N} = \frac{N-1}{2}.
+$$
+Nadalje, prosječni broj poruka $okay$ po jednom korištenju CS-a je $\frac{N-1}{2}$. Naime, za svaku poruku tipa $request$, šalje se po jedna poruka tipa $okay$.\\
+Sveukupan broj dodatnih poruka po jednom korištenju CS-a iznosi$$
+	2\frac{N-1}{2} = N-1
+$$
+\vspace{0.5cm}
+\\
+
+Promotrimo sada sustav u kojemu se zahtjevi za CS događaju često.\\
+Tada u gotovo svakom trenutku postoji po jedan zahtjev za CS na čekanju od svakog procesa.
+Dok proces čeka odgovore na poslane poruke tipa $request$, prima u prosjeku $\frac{N-1}{2}$ poruka tipa $request$. Na dobivene poruke tipa $request$ većeg prioriteta, uz poruku $okay$, šalje i dodatnu poruku tipa $request$. Za vrijeme čekanja na odobronje ulaska u CS-a, proces šalje u prosjeku $\frac{N-1}{4}$ $request$ poruka. \\
+Dakle, prosječni broj dodatnih poruka po jednom korištenju CS-a iznosi $$
+	2\frac{N-1}{2} + 2\frac{N-1}{4} = 3\frac{N-1}{2}.
+$$
+
+
+
+
+
+\section{Algoritam Lodha \& Kshemkalyany}
+Algoritam Lodha i Kshemkalyani je optimizirana verzija algoritma Ricarta i
+Agrawale za međusobno isključivanje. Algoritam umanjuje složenost smanjivanjem broja poruka koje procesi izmjenjuju kako bi ušli u kritični odsječak.
+
+Prema algoritmu Ricarta i Agrawale, proces mora primiti poruku tipa \textit{okay} od svih ostalih procea prije ulaska u CS. Algoritam Lodha i Kshemkalyania koristi činjenicu da poruku \textit{okay} treba poslati samo proces koji ima prioritet neposredno veći od procesa koji traži ulazak u kritični odsječak.
+
+Također, algoritam zadovoljava uvijete sigurnosti, pravednosti i odsustvo izgladnjivanja.
+Dokaza navedenih svojstva su složeni pa ih izostavljamo u ovome radu.
+
+\subsection{Ideja algoritma}
+Uzmimo za primjer da procesi $P_{i_1}, P_{i_2}, \dots, P_{i_N}$ zahtijevaju ulazak u kritični odsječak, pri čemu $P_{i_1}$ ima zahtjev najvećeg prioriteta te se prioriteti smanjuju redom do $P_{i_N}$ koji ima najniži prioritet. Da bi proces $P_{i_j}$ ušao u kritični odsječak, treba primiti \textit{okay} poruku samo od procesa $P_{i_{j-1}}, 1 < j \leq n$
+
+Svakom procesu pridružen je prioritet te se zahtjevi za kritičnom odsječku odobravaju ovisno o prioritetima. Pretpostavljamo da komunikacijski kanali rade uvijek ispravno.
+
+\subsection{Rad algoritma}
+Za lakše objašnjavanje algoritma, potrebne su sljedeće definicije:
+\begin{defn}	Zahtjevi $R_i$ i $R_j$ su konkurentni ako i samo ako vrijedi sljedeće:
+	\begin{itemize}
+		\item proces $P_i$ je  primio poruku \textit{request} od $P_j$ nakon što je poslao \textit{request}
+		\item proces $P_j$ je primio poruku \textit{request} od $P_i$ nakon što je i sam poslao \textit{request}
+	\end{itemize}
+\end{defn}
+
+
+\begin{defn} Definiramo skup:
+	\[
+	CSet_i = \{ R_j | R_i je konkurentan s R_j \} \cup \{ R_i \}
+	\]
+\end{defn}
+
+Rad algoritma zasniva se na komunikacijskim porukama koje dajemo u nastavku.
+
+\subsection{Komunikacija algoritma}
+Algoritam koristi tri vrste poruke:
+
+\begin{itemize}
+	\item \textit{request}
+	\item \textit{okay}
+	\item \textit{flush}
+\end{itemize}
+Svaka od tih poruka nosi sa sobom specifičan vremenski žig. Poruka \textit{request} nosi vremenski žig zahtjeva, dok poruke \textit{flush} i \textit{okay} sadrže vremenski žig zadnjeg ispunjenog zahtjeva pošiljatelja. Porukom \textit{flush}  se postiže ušteda na ukupan broj poslanih poruka.
+
+Svaki proces $P_i$ ima svoj lokalni red $LQR_i$ koji sadrži sve konkurentne zahtjeve poredane silazno prema prioritetima. Prioritet zahtjeva određen je njegovim vremenskim žigom. Kad proces primi poruku \textit{request} od nekog drugog procesa, on određuje kada će ga pustiti u kritični odsječak.
+
+\subsubsection{Poruka OKAY}
+
+Nakon primitka poruke \textit{request}, proces odgovara tom drugom procesu žigosanom porukom \textit{okay} kada on ne želi ući u kritični odsječak. 
+
+Poruka \textit{okay} može služiti kao kolektivni \textit{okay} od procesa koji su imali viši prioritet. Kada proces $P_i$ dobije \textit{okay} od $P_j$ koji je završio sa kritičnim odsječkom, slijedi da su svi zahtjevi s prioritetom većim ili jednakim od $R_j$ gotovi. Proces $P_i$ može maknuti iz svog lokalnog reda $LRQ_i$ sve zahtjeve čiji je prioritet veći ili jednak prioritetu $R_j$. Poruka \textit{okay} se ponaša kao kolektivni odgovor od svih procesa koji su imali zahtjeve višeg prioriteta.
+
+\subsubsection{Poruka FLUSH}
+Slično kao sa porukom \textit{okay}, poruka flush označava kolektivni odgovor od svih procesa koji su imali zahtjeve višeg prioriteta. Nakon izlaska iz kritičnog odsječka, proces pošalje žigosanu poruku \textit{flush} konkurentnom procesu sa sljedećim najvišim prioritetom (ako postoji). Taj proces nalazi se u njegovom lokalnom redu LRQ u kojem čuva sve konkurentne zahtjeve.
+
+Kada proces $P_i$ izađe iz kritičnog odsječka, proces $P_j$ se može nalaziti u jednom od sljedećih stanja:
+
+\begin{itemize}
+	\item $R_j$ je u lokalnom redu procesa $P_i$ i nalazi se nakon zahtjeva $R_i$ što implicira da su $R_j$ i $R_i$ konkurentni zahtjevi. 
+	\item $P_j$ je odgovorio procesu $P_i$ porukom \textit{okay} te je dao zahtjev nižeg prioriteta. $R_j$ i $R_i$ nisu konkurentni zahtjevi.
+	\item $R_j$ je zahtjev višeg prioriteta od $R_i$, iz čega slijedi da je proces $P_j$ izašao iz kritičnog odsječka te sada ima zahtjev nižeg prioriteta. $R_j$ i $R_i$ nisu konkurentni.
+\end{itemize}
+
+Nakon izlaska iz kritične odsječka, proces $P_i$ pošalje poruku flush procesu s najvećim prioritetom iz prve točke. A procesima iz druge i treće točke šalje poruke \textit{okay} jer njihovi zahtjevi nisu konkurentni sa $R_i$. Sada proces koji je primio flush i procesi koji su primili \textit{okay} odlučuju koji će proces sljedeći ući u kritični odsječak.\\
+
+
+\underline{Primjer:} Imamo pet procesa $P_0, \hdots, P_4$ s pripadnim zahtjevima $R_0, \hdots, R_4$. Zamislimo
+situaciju u kojoj imamo red zahtjeva $R_3, R_0, R_2, R_4, R_1$, koji su poredani silazno po
+prioritetima te su zahtjevi $R_0, R_2, R_4$ konkurentni. Dakle, lokalni red procesa $P_0$ sadrži
+zahtjeve $R_0, R_2, R_4$ te kada izađe iz kritične sekcije, $P_0$ šalje poruku \textit{flush} samo procesu
+$P_2$.
+
+\subsubsection{Poruka REQUEST}
+Ako $P_i$  i $P_j$ nemaju konkurentne zahtjeve, tada proces koji je prvi dao zahtjev za kritičnu odsječak dobiva poruku \textit{okay}.
+
+Ako $P_i$  i $P_j$ imaju konkurentne zahtjeve, tada:
+
+\begin{itemize}
+	\item $R_i$ je višeg prioriteta od $R_j$. Tada poruka \textit{request} od $P_j$ služi kao 	implicitni odgovor \textit{okay} na zahtjev procesa $P_i$. Pritom $P_j$ mora čekati poruku \textit{flush} ili \textit{okay} kako bi ušao u kritični odsječak.
+	\item $R_i$ je nižeg prioriteta od $R_j$. Tada poruka request od $P_i$  služi kao implicitni odgovor okay na zahtjev procesa $P_j$. Pritom, $P_i$ mora čekati na poruku \textit{flush} ili \textit{okay} od nekog procesa kako bi ušao u kritični odsječak.
+\end{itemize}
+
+\subsection{Broj poruka}
+Da bi ušao u kritični odsječak, proces $P_i$ šalje $(N-1)$ poruku $request$, a primi $(N - |CSet_i|)$ odgovora u obliku poruka \textit{okay} i \textit{flush}.
+Pogledajmo sljedeća dva slučaja:
+
+\begin{itemize}
+	\item $|CSet_i| \geq 2$.
+	\begin{itemize}
+		\item Postoji barem jedan zahtjev za kritičnim odsječkom
+		čiji je prioritet manji od prioriteta zahtjeva $R_i$ . Stoga će proces $P_i$ poslati jednu \textit{flush} poruku. U ovom slučaju ukupan broj poruka za ulazak u kritični odsječak je $(N - |CSet_i|)$. Kada su svi zahtjevi konkurentni, broj poruka se smanjuje na $N$.
+		\item Nema zahtjeva čiji je prioritet manji od prioriteta zahtjeva $R_i$. $P_i$ neće slati flush poruku.Broj poruka za ulazak u kritični odsječak je $2N -1-|CSet_i|$ . Kada su svi zahtjevi	konkurentni, broj poruka se smanjuje na $N-1$
+	\end{itemize}
+	\item $|CSet_i| = 1$ je nagori slučaj te ukupan broj poruka iznosi $2(N-1)$. 
+\end{itemize}
+
+Algoritam je implementiran pomoću klase \textit{LKMutex}.\\
+Prevođenje: \textbf{javac} LKMutex.java\\
+Pokretanje: %
+\begin{enumerate}
+	\item U terminalu pokrećemo program \textit{NameServer} bez argumenata:\\
+	\textbf{java} NameServer
+	\item Odlučujemo se za broj procesa distribuiranog sustava u kojem ćemo pokrenuti 
+	algoritam, u oznaci $N$ ,
+	\item Odlučujemo se za $baznoIme$ procesa distribuiranog sustava,
+	\item Otvaramo $N$ terminala, u svakome pokrećemo jedan proces pokretanjem programa
+	$LockTester$ s odgovarajućim argumentima:\\
+	\textbf{java} LockTester $<baznoIme>$ $<i>$ $<N>$ $<LKMutex>$
+	\vspace{0.2cm}
+	\\gdje je $i$ identifikator procesa, $i \in \{ 0,1,2,\hdots,N-1 \}$. 
+	Svakom procesu se pridružuje jedinstveni identifikator.
+\end{enumerate}
+\section{Algoritmi zasnovani na kvorumu}
+Algoritmi za isključivanje zasnovani na kvorumu imaju sljedeće dvije karakteristike:
+\begin{enumerate}
+	\item {Proces ne zahtijeva dopuštenje od svih ostalih procesa nego samo od nekog poskupa procesa. Ovo je znatno drugačiji pristup nego kod Lamport i  Ricart–Agrawala algoritma, gdje svi procesi sudjeluju u razrješavanju zahtijeva za kritični odsječak. Podskupovi procesa zadovoljavaju sljedeće pravilo $\forall$ i, j : 1 $\leq$ i, j $\leq$ N $\Rightarrow$ Ri $\cap$ Rj $\neq$  $\emptyset$ i svaki skup naziva se \textit{kvorum}. Posljedica ovog zahtjeva je da svaki par procesa ima proces koji može razriješiti konflikt među njima. }
+	
+	\item {Proces može poslati samo jednu REPLY poruku u bilo kojem trenutku. Proces može poslati REPLY poruku samo nakon što je primilo RELEASE poruku za prethodno poslanu REPLY poruku. }
+\end{enumerate}
+
+Ovakav pristup značajno smanjuje broj poslanih poruka budući da proces traži dopuštenje samo od podskupa skupa svih procesa, a ne od cijelog skupa procesa.
+\newline
+\newline
+Označimo sa C skup kvoruma. Tada skup C zadovoljava sljedeća svojstva:
+\begin{itemize}
+	\item \textbf{Svojstvo presjeka} $\forall$ g,h$\in${C}, g $\cap$ h $\neq$ $\emptyset$. Na primjer, skupovi $\left\{\text{1,2,3}\right\}$, $\left\{\text{2,5,7}\right\}$ i $\left\{\text{5,7,9}\right\}$ ne mogu biti kvorumi u skupu C jer prvi i treći skup nemaju zajednički element.
+	\item \textbf{Svojstvo minimalnosti} Ne postoje g,h$\in${C} takvi da g $\supseteq$ h. Na primjer, skupovi $\left\{\text{1,2,3}\right\}$ i $\left\{\text{1,3}\right\}$ ne mogu biti kvorumi u skupu C zato što je prvi skup nadskup drugog skupa.
+	Ovo svojstvo osigurava efikasnost, a ne korektnost.
+\end{itemize}
+
+
+\subsection{Algoritam Maekawa}
+Algortiam Maekawa je prvi algoritam za međusobno isključivanje zasnovan na kvorumu. Skup kvoruma u algoritumu Maekawa konstruiran je tako da zadovoljava sljedeće uvjete: 
+\begin{itemize}
+	\item [M1] ($\forall$ i,j : i $\neq$ j $\Rightarrow$ Ri $\cap$ Rj $\neq$ $\emptyset$)
+	\item [M2] ($\forall$ i : 1$\leq$i$\leq$N $\Rightarrow$ Si $\in$ Ri)
+	\item [M3] ($\forall$ i : 1$\leq$i$\leq$N $\Rightarrow$ $\mid$ Rt $\mid$ = K)
+	\item [M4] Svaki proces nalazi se u K kvoruma
+\end{itemize}
+
+\begin{table}[H]
+	\centering
+	\caption{Primjer skupa kvoruma koji zadovoljavaju uvjete algoritma Maekawia gdje je K=2}
+	\label{my-label}
+	\begin{tabular}{|l|l|}
+		\hline
+		& $R_1$ = $\left\{\text{1, 2}\right\}$  \\
+		K=2, N=3    & $R_2$ = $\left\{\text{2, 3}\right\}$ \\ 
+		& $R_3$ = $\left\{\text{1, 3}\right\}$ \\ \hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\caption{Primjer skupa kvoruma koji zadovoljavaju uvjete algoritma Maekawia gdje je K=3}
+	\label{my-label}
+	\begin{tabular}{|l|l|}
+		\hline
+		& $R_1$ = $\left\{\text{1,2,3}\right\}$  \\
+		& $R_2$ = $\left\{\text{2,4,6}\right\}$  \\
+		& $R_3$ = $\left\{\text{3,5,6}\right\}$  \\
+		K=3, N=7    & $R_4$ = $\left\{\text{1,4,5}\right\}$ \\ 
+		& $R_5$ = $\left\{\text{2.5.7}\right\}$  \\
+		& $R_6$ = $\left\{\text{1,6,7}\right\}$ \\
+		& $R_7$ = $\left\{\text{3,4,7}\right\}$  \\\hline
+	\end{tabular}
+\end{table}
+
+
+Maekawa je koristio teoriju projektivnih ravnina za konstrukciju kvoruma. Pokazao je da vrijedi N = K(K - 1) + 1. Iz te relacije slijedi $\mid$ Ri $\mid$ =  $\surd$N.
+
+Budući da svaka dva kvoruma sadrže barem jedan zajednički proces (uvjet M1), svaki par procesa ima jedan zajednički proces koji posreduje u rješavanju mogućih konflikata. Proces može imati poslati samo jednu poruku REPLY, to znači da daje dopuštenje procesu samo ukoliko to dopuštenje nije već dano nekom drugom procesu. To daje garanciju za zadovoljavanje svojstva sigurnosti (samo jedan proces može dobiti kritični odsječak). Algoritam također zahtijeva primanje poruka u redoslijedu kojim su poslane.
+Uvjeti M1 i M2 su nužni za korektnost algoritma, dok uvjeti M3 i M4 pružaju druga poželjna svojstva. Uvjet M3 zahtijeva da svi kvorumi imaju jednak broj procesa što bi trebalo značiti da svi procesi obavljaju jednaku količinu posla u međusobnom isključivanju. Zbog uvjeta M4 svi procesi imaju "jednaku odgovornost" u dodjeljivanju dopuštenja drugim procesima. 
+
+\subsubsection{Pseudokod}
+\begin{enumerate}
+	\item \textbf{Zahtijevanje kritičnog odsječka}
+	\begin{enumerate}
+		\item Proces Si zatraži kritični odsječak slanjem poruke REQUEST(i) svim procesima koji se nalaze u istom kvorumu Ri
+		\item  Kada proces Sj primi poruku REQUEST(i), on šalje poruku REPLY(j) procesu Si, samo ukoliko nakon zadnjeg primanja poruke RELEASE, poruka REPLY nije već poslana nekom procesu. Ukoliko je poruka REPLY već poslana proces Sj stavlja u red čekanja REQUEST(i) za kasniju obradu.
+	\end{enumerate}
+	\item \textbf{Izvršavanje kritičnog odsječka}
+	\begin{enumerate}
+		\item  Proces Si ulazi u kritični odsječak onda kada primi poruku REPLY od svakog procesa u kvorumu Ri.
+	\end{enumerate}
+	\item \textbf{Izlazak iz kritičnog odsječka}
+	\begin{enumerate}
+		\item Za izlazak iz kritičnog odsječka, proces Si šalje poruku RELEASE(i) svakom procesu u kvorumu Ri. 
+		\item Kada proces Sj primi poruku RELEASE(i) od procesa Si, on šalje REPLY poruku sljedećem procesu koji je u njegovom redu čekanja te ga miče iz reda. 
+		Ukoliko je red prazan proces ažurira svoje stanje tako da tako da može poslati poruku REPLY kao odgovor na REQUEST poruku
+	\end{enumerate}
+\end{enumerate}
+
+
+Budući da je veličina svakog kvoruma $\surd$N, za dobivanje kritičnog odsječka pošalje se $\surd$N REQUEST poruka, $\surd$N REPLY poruka i $\surd$N RELEASE poruka.
+
+
+\begin{theorem}
+	Algoritmom Maekawa postiže se međusobno isključivanje.
+\end{theorem}
+
+\begin{proof}
+	Pretpostavimo da se dva procesa Si i Sj istovremeno nalaze u kritičnom odsječku. To znači da je proces Si primio REPLY poruku od svih procesa u kvorumu Ri i da je istovremeno proces Sj bio u mogućnosti istovremeno primiti REPLY poruku od svih procesa u kvorumu Ri. Budući da vrijedi Ri $\cap$ Rj $\neq$ $\emptyset$ (uvjet M1) postoji proces Sk $\in$ Ri $\cap$ Rj. Proces Sk je morao istovremeno poslati REPLY poruku i procesu Si i procesu Sj što je kontradikicija. 
+\end{proof}
+
+
+\subsubsection{Problem zastoja}
+U algoritmu Maekawa može doći do zastoja (nije zadovoljeno svojstvo odsustva izgladnjivanja) zato što proces može biti blokiran od strane drugih procesa i poruke REQUEST nisu prioritizirane s obzirom na vrijeme slanja. Dakle, proces može poslati zahtjev procesu i kasnije prisiliti zahtjev većeg prioriteta da čeka (nije zadovoljeno svojstvo pravednosti). 
+Bez smanjenja općenitosti možemo pretpostaviti da procesi Si, Sj i Sk istovremeno zatraže kritični odsječak. Pretpostavimo Sij $\in$ Ri$\cap$Rj, Sjk $\in$ Rj$\cap$Rk i Ski $\in$ Rk$\cap$Ri. Budući da proces REQUEST poruku ne šalje nekim unaprijed određenim redom i kašnjenja poruka su proizvoljna, moguć je sljedeći redoslijed događaja:
+proces Si zaustavlja proces Sij (Sj mora čekati Sij), Proces Sj zaustavlja Sjk (Sk mora čekati Sjk) i Sk zaustavlja Ski (Sj mora čekati Ski). Ovakvo stanje prikazuje stanje zastoja u koji su uključeni Si, Sj i Sk.
+\newline
+Da bi se riješio problem zastoja potrebne su dodatne poruke:
+\begin{itemize}
+	\item \textbf{FAILED}  proces Si šalje poruku FAILED procesu Sj ukoliko mu ne može odobriti kritični odsječak jer ga je već odobrio nekom drugom procesu sa većim prioritetom.
+	\item \textbf{INQUIRE} proces Si slanjem INQUIRE poruke procesu Sj želi saznati je li proces Sj uspio zaustaviti sve procese koji se nalaze u njegovom kvorumu.
+	\item \textbf{YIELD} proces Si slanjem YIELD poruke procesu Sj vraća primljeno dopuštenje za ulazak u kritični odsječak (da proces Sj može dati dopuštenje procesu sa većim prioritetom).
+\end{itemize}
+
+\textbf{Nadopuna algoritma:}
+\begin{enumerate}
+	\item Kada proces Sj blokira zahtjev REQUEST(ts, i) \footnote{\texttt{ts je vremenski žig (timestamp)}} procesa Si zato što je već dao dopuštenje procesu Sk, proces Sj šalje procesu Si poruku FAILED(j) ukoliko Si ima manji prioritet od procesa Sk. Inače proces Sj šalje procesu Sk poruku INQUIRE(j).
+	\item Kao odgovor na primljenu poruku INQUIRE(j) od procesa Sj, proces Sk šalje poruku YIELD(k) procesu Sj nakon što je primio poruku FAILD od nekog procesa u svom kvorumu i ukoliko je poslao YIELD poruke, a nije primio REPLY kao odgovor.
+	\item Kada proces Sj primi YIELD(k) poruku od procesa Sk, proces Sj sprema zahtjev porocesa Sk na pravo mjesto u svom redu procesa koji čekaju i šalje REPLY(j) poruku procesu koji je prvi u redu.
+\end{enumerate}
+
+Sa ovom nadopunom algoritma za jedno izvršavanje kritične sekcije u najgorem slučaju potrebno je 5$\surd$N poruka.
+
+Izvedba \textit{Algoritma Maekawa} implemntirana je klasom \textit{MaekawaMutex}.
+Potrebno je pripaziti na postojanje ispravne topologije.
+Pokretanje: %
+\begin{enumerate}
+	\item U terminalu pokrećemo program \textit{NameServer} bez argumenata:\\
+	\textbf{java} NameServer
+	\item Odlučujemo se za broj procesa distribuiranog sustava u kojem ćemo pokrenuti 
+	algoritam, u oznaci $N$ ,
+	\item Odlučujemo se za $baznoIme$ procesa distribuiranog sustava,
+	\item Otvaramo $N$ terminala, u svakome pokrećemo jedan proces pokretanjem programa
+	$LockTester$ s odgovarajućim argumentima:\\
+	\textbf{java} LockTester $<baznoIme>$ $<i>$ $<N>$ $<Maekawi>$
+	\vspace{0.2cm}
+	\\gdje je $i$ identifikator procesa, $i \in \{ 0,1,2,\hdots,N-1 \}$. 
+	Svakom procesu se pridružuje jedinstveni identifikator.
+\end{enumerate}
+
+
+\renewcommand{\refname}{}
+\nocite{*}
+\bibliographystyle{abbrv}
+\bibliography{document}
+\end{otherlanguage}
+\end{document}

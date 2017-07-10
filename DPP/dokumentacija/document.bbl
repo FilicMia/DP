@@ -1,0 +1,19 @@
+\begin{thebibliography}{1}
+
+\bibitem{gary}
+V.~Garg.
+\newblock {\em Concurrent and Distributed Computing in Java}.
+\newblock Wiley – IEEE Press, Hoboken NY, 2004.
+
+\bibitem{book2}
+A.~D. Kshemkalyani and M.~Singhal.
+\newblock {\em Distributed Computing: Principles, Algorithms, and Systems}.
+\newblock 2008.
+
+\bibitem{manger}
+R.~Manger.
+\newblock {\em Distribuirani procesi}.
+\newblock 2016.
+\newblock interna skripta.
+
+\end{thebibliography}

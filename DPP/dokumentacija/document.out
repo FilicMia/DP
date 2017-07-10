@@ -1,0 +1,18 @@
+\BOOKMARK [1][-]{section.1}{Uvod}{}% 1
+\BOOKMARK [1][-]{section.2}{Algoritmi meusobnog iskljucivanja zasnovani na dinamickoj strukturi podataka}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{Singhalov algoritam}{section.2}% 3
+\BOOKMARK [3][-]{subsubsection.2.1.1}{Opis algoritma}{subsection.2.1}% 4
+\BOOKMARK [3][-]{subsubsection.2.1.2}{Ispravnost algoritma}{subsection.2.1}% 5
+\BOOKMARK [3][-]{subsubsection.2.1.3}{Prosjecna slo\236enost algoritma u sustavima s rijetkim i cestim zahtjevima na CS}{subsection.2.1}% 6
+\BOOKMARK [1][-]{section.3}{Algoritam Lodha \046 Kshemkalyany}{}% 7
+\BOOKMARK [2][-]{subsection.3.1}{Ideja algoritma}{section.3}% 8
+\BOOKMARK [2][-]{subsection.3.2}{Rad algoritma}{section.3}% 9
+\BOOKMARK [2][-]{subsection.3.3}{Komunikacija algoritma}{section.3}% 10
+\BOOKMARK [3][-]{subsubsection.3.3.1}{Poruka OKAY}{subsection.3.3}% 11
+\BOOKMARK [3][-]{subsubsection.3.3.2}{Poruka FLUSH}{subsection.3.3}% 12
+\BOOKMARK [3][-]{subsubsection.3.3.3}{Poruka REQUEST}{subsection.3.3}% 13
+\BOOKMARK [2][-]{subsection.3.4}{Broj poruka}{section.3}% 14
+\BOOKMARK [1][-]{section.4}{Algoritmi zasnovani na kvorumu}{}% 15
+\BOOKMARK [2][-]{subsection.4.1}{Algoritam Maekawa}{section.4}% 16
+\BOOKMARK [3][-]{subsubsection.4.1.1}{Pseudokod}{subsection.4.1}% 17
+\BOOKMARK [3][-]{subsubsection.4.1.2}{Problem zastoja}{subsection.4.1}% 18

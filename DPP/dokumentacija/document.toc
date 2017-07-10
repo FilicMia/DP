@@ -1,0 +1,21 @@
+\select@language {english}
+\select@language {croatian}
+\contentsline {section}{\numberline {1}Uvod}{1}{section.1}
+\contentsline {section}{\numberline {2}Algoritmi me\IeC {\dj }usobnog isklju\IeC {\v c}ivanja zasnovani na dinami\IeC {\v c}koj strukturi podataka}{1}{section.2}
+\contentsline {subsection}{\numberline {2.1}Singhalov algoritam}{1}{subsection.2.1}
+\contentsline {subsubsection}{\numberline {2.1.1}Opis algoritma}{3}{subsubsection.2.1.1}
+\contentsline {subsubsection}{\numberline {2.1.2}Ispravnost algoritma}{7}{subsubsection.2.1.2}
+\contentsline {subsubsection}{\numberline {2.1.3}Prosje\IeC {\v c}na slo\IeC {\v z}enost algoritma u sustavima s rijetkim i \IeC {\v c}estim zahtjevima na CS}{10}{subsubsection.2.1.3}
+\contentsline {section}{\numberline {3}Algoritam Lodha \& Kshemkalyany}{12}{section.3}
+\contentsline {subsection}{\numberline {3.1}Ideja algoritma}{12}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Rad algoritma}{12}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}Komunikacija algoritma}{13}{subsection.3.3}
+\contentsline {subsubsection}{\numberline {3.3.1}Poruka OKAY}{13}{subsubsection.3.3.1}
+\contentsline {subsubsection}{\numberline {3.3.2}Poruka FLUSH}{14}{subsubsection.3.3.2}
+\contentsline {subsubsection}{\numberline {3.3.3}Poruka REQUEST}{15}{subsubsection.3.3.3}
+\contentsline {subsection}{\numberline {3.4}Broj poruka}{15}{subsection.3.4}
+\contentsline {section}{\numberline {4}Algoritmi zasnovani na kvorumu}{16}{section.4}
+\contentsline {subsection}{\numberline {4.1}Algoritam Maekawa}{17}{subsection.4.1}
+\contentsline {subsubsection}{\numberline {4.1.1}Pseudokod}{19}{subsubsection.4.1.1}
+\contentsline {subsubsection}{\numberline {4.1.2}Problem zastoja}{20}{subsubsection.4.1.2}
+\select@language {english}
